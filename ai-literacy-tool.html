@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Literacy: A Course for Young Learners</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .module-card:hover { transform: translateY(-4px); }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .zorbit-shape { transition: all 0.3s ease; }
+    .zorbit-shape:hover { transform: scale(1.1); }
+    .progress-ring { transition: stroke-dashoffset 0.5s ease; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, createContext, useContext } = React;
+
+    // Facilitator Context
+    const FacilitatorContext = createContext(true);
+
+    // Icons
+    const Icons = {
+      Brain: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
+      Tree: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+      Globe: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+      Chip: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>,
+      Users: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+      Rocket: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>,
+      Check: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>,
+      ArrowRight: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>,
+      ArrowLeft: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>,
+      Book: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>,
+      Eye: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>,
+      Download: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
+      Printer: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+    };
+
+    // Data
+    const MODULES = [
+      { id: 1, title: "What Is Intelligence Anyway?", icon: Icons.Brain, color: "from-purple-500 to-indigo-600", description: "Explore pattern recognition, prediction, and learning from examples", duration: "60-90 min" },
+      { id: 2, title: "The AI Family Tree", icon: Icons.Tree, color: "from-green-500 to-teal-600", description: "Journey through AI history: from rules to transformers", duration: "60-90 min" },
+      { id: 3, title: "AI in the Wild", icon: Icons.Globe, color: "from-blue-500 to-cyan-600", description: "Discover AI in your daily life and understand its goals", duration: "60-90 min" },
+      { id: 4, title: "How LLMs Actually Work", icon: Icons.Chip, color: "from-orange-500 to-red-600", description: "Demystify ChatGPT: prediction, not understanding", duration: "60-90 min" },
+      { id: 5, title: "The Craft of Collaboration", icon: Icons.Users, color: "from-pink-500 to-rose-600", description: "Master prompting, iteration, and critical evaluation", duration: "60-90 min" },
+      { id: 6, title: "Build Something", icon: Icons.Rocket, color: "from-yellow-500 to-amber-600", description: "Apply everything in a real capstone project", duration: "2-3 sessions" }
+    ];
+
+    const BADGES = [
+      { id: 'pattern_master', name: 'Pattern Master', icon: '🧩', description: 'Completed all pattern recognition activities' },
+      { id: 'history_buff', name: 'History Buff', icon: '📚', description: 'Explored the full AI timeline' },
+      { id: 'ai_detective', name: 'AI Detective', icon: '🔍', description: 'Found 10+ AI systems in daily life' },
+      { id: 'myth_buster', name: 'Myth Buster', icon: '💡', description: 'Uncovered LLM hallucinations' },
+      { id: 'prompt_pro', name: 'Prompt Pro', icon: '✨', description: 'Mastered the art of prompting' },
+      { id: 'creator', name: 'Creator', icon: '🚀', description: 'Completed the capstone project' }
+    ];
+
+    // Get initial progress
+    const getInitialProgress = () => {
+      try {
+        const saved = localStorage.getItem('ai_literacy_progress');
+        return saved ? JSON.parse(saved) : { completedModules: [], badges: [], responses: {} };
+      } catch { return { completedModules: [], badges: [], responses: {} }; }
+    };
+
+    // Progress Ring Component
+    const ProgressRing = ({ progress, size = 120, strokeWidth = 8 }) => {
+      const radius = (size - strokeWidth) / 2;
+      const circumference = radius * 2 * Math.PI;
+      const offset = circumference - (progress / 100) * circumference;
+      return (
+        <svg width={size} height={size} className="transform -rotate-90">
+          <circle cx={size/2} cy={size/2} r={radius} stroke="#e5e7eb" strokeWidth={strokeWidth} fill="none" />
+          <circle cx={size/2} cy={size/2} r={radius} stroke="url(#gradient)" strokeWidth={strokeWidth} fill="none" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" className="progress-ring" />
+          <defs><linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#667eea" /><stop offset="100%" stopColor="#764ba2" /></linearGradient></defs>
+        </svg>
+      );
+    };
+
+    // Badge Component
+    const Badge = ({ badge, earned = false }) => (
+      <div className={"flex flex-col items-center p-3 rounded-xl transition-all " + (earned ? 'bg-gradient-to-br from-yellow-100 to-amber-100 shadow-md' : 'bg-gray-100 opacity-50')}>
+        <span className="text-3xl mb-1">{badge.icon}</span>
+        <span className={"text-xs font-medium text-center " + (earned ? 'text-amber-800' : 'text-gray-500')}>{badge.name}</span>
+      </div>
+    );
+
+    // Facilitator Notes - only visible in facilitator mode
+    const FacilitatorNotes = ({ notes, tips }) => {
+      const isFacilitator = useContext(FacilitatorContext);
+      if (!isFacilitator) return null;
+      return (
+        <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Icons.Book />
+            <h4 className="font-semibold text-amber-800">Facilitator Notes</h4>
+          </div>
+          <p className="text-amber-900 text-sm mb-2">{notes}</p>
+          {tips && <div className="mt-3 pt-3 border-t border-amber-200"><p className="text-xs text-amber-700 font-medium">Tips:</p><p className="text-sm text-amber-800">{tips}</p></div>}
+        </div>
+      );
+    };
+
+    // Prediction Game Activity
+    const PredictionGame = ({ onComplete }) => {
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const [userPredictions, setUserPredictions] = useState([]);
+      const [showResult, setShowResult] = useState(false);
+      const [confidence, setConfidence] = useState(3);
+      const [input, setInput] = useState('');
+
+      const sentences = [
+        { text: "The cat sat on the", common: ["mat", "floor", "couch", "bed"], difficulty: "easy" },
+        { text: "Peanut butter and", common: ["jelly", "jam", "honey"], difficulty: "easy" },
+        { text: "After it started raining, I grabbed my", common: ["umbrella", "jacket", "coat"], difficulty: "medium" },
+        { text: "She looked at her phone and", common: ["smiled", "frowned", "sighed", "laughed"], difficulty: "medium" },
+        { text: "The most important thing about learning is", common: ["practice", "curiosity", "patience"], difficulty: "hard" },
+        { text: "He opened the door and saw", common: ["nothing", "someone", "darkness", "light"], difficulty: "hard" }
+      ];
+
+      const handleSubmit = () => {
+        const prediction = { sentence: sentences[currentIndex].text, userAnswer: input, confidence, commonAnswers: sentences[currentIndex].common };
+        setUserPredictions([...userPredictions, prediction]);
+        setShowResult(true);
+      };
+
+      const handleNext = () => {
+        if (currentIndex < sentences.length - 1) { setCurrentIndex(currentIndex + 1); setShowResult(false); setInput(''); setConfidence(3); }
+        else { onComplete(userPredictions); }
+      };
+
+      const current = sentences[currentIndex];
+
+      return (
+        <div className="bg-white rounded-2xl shadow-lg p-6 fade-in">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-gray-800">The Prediction Game</h3>
+            <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">{currentIndex + 1} / {sentences.length}</span>
+          </div>
+          <FacilitatorNotes notes="This activity makes visible how our brains predict. After each sentence, discuss: How confident were you? What patterns were you using?" tips="For some predictions students feel certain, for others multiple options work. This parallels how AI predicts tokens!" />
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6 mb-6">
+            <p className="text-lg mb-1 text-gray-600">Complete this sentence:</p>
+            <p className="text-2xl font-semibold text-gray-800">"{current.text} <span className="text-purple-500">___</span>"</p>
+            <span className={"inline-block mt-2 px-2 py-1 rounded text-xs font-medium " + (current.difficulty === 'easy' ? 'bg-green-100 text-green-700' : current.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')}>{current.difficulty}</span>
+          </div>
+          {!showResult ? (
+            <div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Your prediction:</label>
+                <input type="text" value={input} onChange={(e) => setInput(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none text-lg" placeholder="Type your prediction..." onKeyPress={(e) => e.key === 'Enter' && input && handleSubmit()} />
+              </div>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Confidence level: {confidence}/5</label>
+                <input type="range" min="1" max="5" value={confidence} onChange={(e) => setConfidence(parseInt(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600" />
+                <div className="flex justify-between text-xs text-gray-500 mt-1"><span>Not sure</span><span>Very confident</span></div>
+              </div>
+              <button onClick={handleSubmit} disabled={!input} className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">Submit Prediction</button>
+            </div>
+          ) : (
+            <div className="fade-in">
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+                <p className="font-medium text-green-800">Your prediction: "{input}"</p>
+                <p className="text-sm text-green-600 mt-1">Confidence: {confidence}/5</p>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                <p className="font-medium text-blue-800">Common predictions:</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {current.common.map((word, i) => <span key={i} className={"px-3 py-1 rounded-full text-sm " + (input.toLowerCase().includes(word.toLowerCase()) ? 'bg-green-200 text-green-800 font-medium' : 'bg-blue-100 text-blue-700')}>{word}</span>)}
+                </div>
+              </div>
+              <button onClick={handleNext} className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2">{currentIndex < sentences.length - 1 ? 'Next Sentence' : 'Complete Activity'}<Icons.ArrowRight /></button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // Pattern Recognition Activity
+    const PatternRecognition = ({ onComplete }) => {
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const [userAnswers, setUserAnswers] = useState([]);
+      const [input, setInput] = useState('');
+      const [showResult, setShowResult] = useState(false);
+
+      const patterns = [
+        { sequence: [2, 4, 6, 8], answer: [10, 12], rule: "Add 2 each time" },
+        { sequence: [1, 1, 2, 3, 5, 8], answer: [13, 21], rule: "Fibonacci - sum of previous two" },
+        { sequence: [1, 4, 9, 16, 25], answer: [36, 49], rule: "Square numbers" },
+        { sequence: ["🔴", "🔵", "🔴", "🔵", "🔴"], answer: ["🔵", "🔴"], rule: "Alternating" }
+      ];
+
+      const handleSubmit = () => { setUserAnswers([...userAnswers, { pattern: patterns[currentIndex], userAnswer: input }]); setShowResult(true); };
+      const handleNext = () => { if (currentIndex < patterns.length - 1) { setCurrentIndex(currentIndex + 1); setShowResult(false); setInput(''); } else { onComplete(userAnswers); } };
+      const current = patterns[currentIndex];
+
+      return (
+        <div className="bg-white rounded-2xl shadow-lg p-6 fade-in">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-gray-800">Pattern Recognition</h3>
+            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">{currentIndex + 1} / {patterns.length}</span>
+          </div>
+          <FacilitatorNotes notes="Ask after each pattern: How did you figure it out? Did you try any wrong guesses first?" tips="The point isn't to test - it's to make pattern recognition conscious!" />
+          <div className="bg-gradient-to-r from-green-50 to-teal-50 rounded-xl p-6 mb-6">
+            <p className="text-lg mb-3 text-gray-600">Find the pattern and predict the next values:</p>
+            <div className="flex items-center gap-3 flex-wrap">
+              {current.sequence.map((item, i) => <span key={i} className="text-3xl font-bold text-gray-800 bg-white px-4 py-2 rounded-lg shadow-sm">{item}</span>)}
+              <span className="text-3xl text-gray-400">→</span>
+              <span className="text-3xl font-bold text-green-500">?</span>
+            </div>
+          </div>
+          {!showResult ? (
+            <div>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Next values (comma separated):</label>
+                <input type="text" value={input} onChange={(e) => setInput(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none text-lg" placeholder="e.g., 10, 12" onKeyPress={(e) => e.key === 'Enter' && input && handleSubmit()} />
+              </div>
+              <button onClick={handleSubmit} disabled={!input} className="w-full py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-xl font-semibold hover:from-green-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">Check Answer</button>
+            </div>
+          ) : (
+            <div className="fade-in">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                <p className="font-medium text-blue-800">Your answer: {input}</p>
+                <p className="text-sm text-blue-600 mt-1">Correct: {current.answer.join(', ')}</p>
+                <p className="text-sm text-blue-600 mt-1">Rule: {current.rule}</p>
+              </div>
+              <button onClick={handleNext} className="w-full py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-xl font-semibold hover:from-green-700 hover:to-teal-700 transition-all flex items-center justify-center gap-2">{currentIndex < patterns.length - 1 ? 'Next Pattern' : 'Complete Activity'}<Icons.ArrowRight /></button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // Zorbit Activity
+    const ZorbitActivity = ({ onComplete }) => {
+      const [examples, setExamples] = useState([]);
+      const [guess, setGuess] = useState('');
+      const [guesses, setGuesses] = useState([]);
+      const [revealed, setRevealed] = useState(false);
+      const allExamples = [{ shape: "⭕", isZorbit: true }, { shape: "⬜", isZorbit: false }, { shape: "🔵", isZorbit: true }, { shape: "🔺", isZorbit: false }, { shape: "🟢", isZorbit: true }, { shape: "◆", isZorbit: false }];
+
+      useEffect(() => { if (examples.length < allExamples.length) { const timer = setTimeout(() => setExamples(allExamples.slice(0, examples.length + 1)), examples.length === 0 ? 500 : 1500); return () => clearTimeout(timer); } }, [examples.length]);
+
+      return (
+        <div className="bg-white rounded-2xl shadow-lg p-6 fade-in">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">Learning the Zorbit Rule</h3>
+          <FacilitatorNotes notes="This is supervised learning in miniature! Students figure out rules from examples only." tips="Ask: How many examples did you need? Did the 'not zorbit' examples help?" />
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 mb-6">
+            <p className="text-gray-700 mb-4">A "Zorbit" is a made-up thing. Watch the examples and figure out the rule!</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div><h4 className="font-semibold text-green-700 mb-2">Zorbits</h4><div className="flex flex-wrap gap-3">{examples.filter(e => e.isZorbit).map((ex, i) => <span key={i} className="text-4xl zorbit-shape bg-white p-2 rounded-lg shadow-sm fade-in">{ex.shape}</span>)}</div></div>
+              <div><h4 className="font-semibold text-red-700 mb-2">Not Zorbits</h4><div className="flex flex-wrap gap-3">{examples.filter(e => !e.isZorbit).map((ex, i) => <span key={i} className="text-4xl zorbit-shape bg-white p-2 rounded-lg shadow-sm fade-in">{ex.shape}</span>)}</div></div>
+            </div>
+          </div>
+          <div className="mb-4">
+            <div className="flex gap-2"><input type="text" value={guess} onChange={(e) => setGuess(e.target.value)} className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none" placeholder="What's your rule guess?" /><button onClick={() => { setGuesses([...guesses, guess]); setGuess(''); }} disabled={!guess} className="px-4 py-2 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 disabled:opacity-50 transition-all">Guess</button></div>
+          </div>
+          {guesses.length > 0 && <div className="mb-4"><p className="text-sm font-medium text-gray-600 mb-2">Your guesses:</p>{guesses.map((g, i) => <div key={i} className="bg-gray-100 px-3 py-2 rounded-lg text-sm mb-1">Guess {i + 1}: {g}</div>)}</div>}
+          {!revealed && examples.length === allExamples.length && <button onClick={() => setRevealed(true)} className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all">Reveal the Rule</button>}
+          {revealed && (
+            <div className="fade-in">
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4"><p className="font-semibold text-green-800">The Rule: Zorbits have curved lines (circles only)</p></div>
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-4"><p className="text-sm text-purple-800"><strong>The Connection to AI:</strong> This is exactly how machine learning works! Learn from labeled examples, form hypotheses, refine.</p></div>
+              <button onClick={() => onComplete({ guesses, revealed: true })} className="w-full py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2">Complete Activity<Icons.ArrowRight /></button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // Reflection Component
+    const ReflectionActivity = ({ questions, onComplete }) => {
+      const [answers, setAnswers] = useState({});
+      const allAnswered = questions.every((_, i) => answers[i] && answers[i].length > 10);
+      return (
+        <div className="bg-white rounded-2xl shadow-lg p-6 fade-in">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">Reflection Time</h3>
+          <FacilitatorNotes notes="Don't push for 'right' answers - genuinely explore what the student thinks." />
+          <div className="space-y-6 mb-6">
+            {questions.map((q, i) => <div key={i}><label className="block text-gray-700 font-medium mb-2">{q}</label><textarea value={answers[i] || ''} onChange={(e) => setAnswers({ ...answers, [i]: e.target.value })} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none resize-none" rows={3} placeholder="Write your thoughts..." /></div>)}
+          </div>
+          <button onClick={() => onComplete(answers)} disabled={!allAnswered} className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">Save Reflections<Icons.ArrowRight /></button>
+        </div>
+      );
+    };
+
+    // Timeline Activity
+    const TimelineActivity = ({ onComplete }) => {
+      const [activeEvent, setActiveEvent] = useState(null);
+      const events = [
+        { year: 1950, title: "Turing's Paper", description: "Can machines think?", era: "origins" },
+        { year: 1956, title: "AI Term Coined", description: "Dartmouth Conference names the field", era: "origins" },
+        { year: 1970, title: "First AI Winter", description: "Hype didn't match reality", era: "winter" },
+        { year: 1997, title: "Deep Blue", description: "IBM beats chess champion Kasparov", era: "milestone" },
+        { year: 2012, title: "Deep Learning", description: "AlexNet wins ImageNet", era: "breakthrough" },
+        { year: 2016, title: "AlphaGo", description: "AI beats world Go champion", era: "breakthrough" },
+        { year: 2017, title: "Transformers", description: "Architecture behind GPT", era: "breakthrough" },
+        { year: 2022, title: "ChatGPT", description: "AI goes mainstream", era: "now" }
+      ];
+      const getEraColor = (era) => ({ origins: 'bg-blue-500', winter: 'bg-gray-400', milestone: 'bg-green-500', breakthrough: 'bg-purple-500', now: 'bg-pink-500' }[era] || 'bg-gray-500');
+
+      return (
+        <div className="bg-white rounded-2xl shadow-lg p-6 fade-in">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">The AI Timeline</h3>
+          <FacilitatorNotes notes="Help students see the pattern: optimism → winter → new approach. Each 'spring' came from a genuinely new idea." />
+          <div className="relative mb-6">
+            <div className="absolute left-4 top-0 bottom-0 w-1 bg-gray-200 rounded-full"></div>
+            <div className="space-y-4">
+              {events.map((event, i) => (
+                <div key={i} className="relative pl-10 cursor-pointer transition-all hover:scale-102" onClick={() => setActiveEvent(activeEvent === i ? null : i)}>
+                  <div className={"absolute left-2 w-5 h-5 rounded-full border-4 border-white shadow-md " + getEraColor(event.era)}></div>
+                  <div className={"bg-gradient-to-r rounded-xl p-4 transition-all " + (activeEvent === i ? 'from-purple-50 to-indigo-50 shadow-md' : 'from-gray-50 to-gray-50')}>
+                    <div className="flex items-center gap-3"><span className="text-lg font-bold text-gray-500">{event.year}</span><span className="text-lg font-semibold text-gray-800">{event.title}</span></div>
+                    {activeEvent === i && <p className="text-gray-600 mt-2 fade-in">{event.description}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <button onClick={() => onComplete({ viewed: true })} className="w-full py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2">Complete Timeline Review<Icons.ArrowRight /></button>
+        </div>
+      );
+    };
+
+    // AI Sorting Activity
+    const AISortingActivity = ({ onComplete }) => {
+      const [items, setItems] = useState([
+        { id: 1, name: "YouTube Recommendations", category: null },
+        { id: 2, name: "Face Unlock", category: null },
+        { id: 3, name: "ChatGPT", category: null },
+        { id: 4, name: "Self-Driving Car", category: null },
+        { id: 5, name: "Spam Filter", category: null },
+        { id: 6, name: "Spotify Discover", category: null }
+      ]);
+      const categories = [
+        { id: 'recommendation', name: 'Recommendation', color: 'bg-blue-100 border-blue-300' },
+        { id: 'recognition', name: 'Recognition', color: 'bg-green-100 border-green-300' },
+        { id: 'generation', name: 'Generation', color: 'bg-purple-100 border-purple-300' },
+        { id: 'control', name: 'Control', color: 'bg-orange-100 border-orange-300' }
+      ];
+      const allCategorized = items.every(item => item.category);
+
+      return (
+        <div className="bg-white rounded-2xl shadow-lg p-6 fade-in">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">Sort the AI Systems</h3>
+          <FacilitatorNotes notes="Some items won't fit neatly - that's great for discussion!" tips="Ask: Which category has the most items from daily life?" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
+            {categories.map(cat => <div key={cat.id} className={"border-2 rounded-xl p-3 text-center " + cat.color}><span className="text-sm font-medium">{cat.name}</span></div>)}
+          </div>
+          <div className="space-y-3 mb-6">
+            {items.map(item => (
+              <div key={item.id} className="bg-gray-50 rounded-xl p-4">
+                <p className="font-medium text-gray-800 mb-2">{item.name}</p>
+                <div className="flex gap-2 flex-wrap">
+                  {categories.map(cat => <button key={cat.id} onClick={() => setItems(items.map(it => it.id === item.id ? { ...it, category: cat.id } : it))} className={"px-3 py-1 rounded-full text-sm font-medium transition-all " + (item.category === cat.id ? cat.color + ' border-2' : 'bg-gray-200 hover:bg-gray-300')}>{cat.name}</button>)}
+                </div>
+              </div>
+            ))}
+          </div>
+          {allCategorized && <button onClick={() => onComplete({ items })} className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2">Complete Activity<Icons.ArrowRight /></button>}
+        </div>
+      );
+    };
+
+    // Token Prediction Demo
+    const TokenPredictionDemo = ({ onComplete }) => {
+      const [stage, setStage] = useState(0);
+      const [userGuess, setUserGuess] = useState('');
+      const [revealed, setRevealed] = useState(false);
+      const demos = [
+        { context: "The chef was preparing dinner. He grabbed the knife and", aiPredictions: ["started chopping", "began slicing", "cut the bread"], category: "cooking" },
+        { context: "The horror movie reached its climax. The villain grabbed the knife and", aiPredictions: ["approached slowly", "raised it menacingly", "stepped into shadows"], category: "horror" }
+      ];
+      const current = demos[stage];
+
+      return (
+        <div className="bg-white rounded-2xl shadow-lg p-6 fade-in">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">Token Prediction Live</h3>
+          <FacilitatorNotes notes="This demonstrates that LLMs predict text based on context. The SAME words in different contexts lead to different predictions!" />
+          <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-6 mb-6">
+            <p className="text-sm text-gray-600 mb-2">Context: {current.category}</p>
+            <p className="text-xl font-medium text-gray-800">"{current.context}<span className="text-orange-500 animate-pulse">|</span>"</p>
+          </div>
+          {!revealed ? (
+            <div>
+              <div className="mb-4"><label className="block text-sm font-medium text-gray-700 mb-2">What comes next?</label><input type="text" value={userGuess} onChange={(e) => setUserGuess(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none text-lg" placeholder="Your prediction..." /></div>
+              <button onClick={() => setRevealed(true)} disabled={!userGuess} className="w-full py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all">See AI Predictions</button>
+            </div>
+          ) : (
+            <div className="fade-in">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4"><p className="font-medium text-blue-800">Your guess: "{userGuess}"</p></div>
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-4"><p className="font-medium text-purple-800 mb-2">AI predictions:</p><ul>{current.aiPredictions.map((p, i) => <li key={i} className="text-purple-700">• {p}</li>)}</ul></div>
+              <button onClick={() => { if (stage < demos.length - 1) { setStage(stage + 1); setUserGuess(''); setRevealed(false); } else { onComplete({ completed: true }); } }} className="w-full py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2">{stage < demos.length - 1 ? 'Next Context' : 'Complete Activity'}<Icons.ArrowRight /></button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // Hallucination Hunt
+    const HallucinationHunt = ({ onComplete }) => {
+      const [currentTest, setCurrentTest] = useState(0);
+      const [showExplanation, setShowExplanation] = useState(false);
+      const tests = [
+        { name: "Fake Book", prompt: "Summarize 'The Midnight Garden' by Jennifer Blackwood", explanation: "This book doesn't exist! AI generates plausible-sounding content.", lesson: "Confidence doesn't mean accuracy." },
+        { name: "Memory Test", prompt: "What did we discuss last week?", explanation: "AI has no memory between conversations!", lesson: "Each chat starts fresh." }
+      ];
+      const current = tests[currentTest];
+
+      return (
+        <div className="bg-white rounded-2xl shadow-lg p-6 fade-in">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">The Hallucination Hunt</h3>
+          <FacilitatorNotes notes="This reveals that AI 'hallucinations' aren't bugs - they're features of how prediction works." tips="Ask: How would you know this was wrong if you didn't already know?" />
+          <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl p-6 mb-6">
+            <span className="inline-block px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium mb-3">Test {currentTest + 1}: {current.name}</span>
+            <p className="text-lg text-gray-700 mb-2">Try asking an AI:</p>
+            <div className="bg-white rounded-lg p-4 shadow-sm"><p className="font-mono text-gray-800">"{current.prompt}"</p></div>
+          </div>
+          {!showExplanation ? (
+            <div className="space-y-3">
+              <p className="text-gray-700 font-medium">Did the AI give a confident answer?</p>
+              <div className="flex gap-3">
+                <button onClick={() => setShowExplanation(true)} className="flex-1 py-3 bg-red-100 text-red-700 rounded-xl font-semibold hover:bg-red-200 transition-all">Yes, it made stuff up!</button>
+                <button onClick={() => setShowExplanation(true)} className="flex-1 py-3 bg-green-100 text-green-700 rounded-xl font-semibold hover:bg-green-200 transition-all">No, it admitted it didn't know</button>
+              </div>
+            </div>
+          ) : (
+            <div className="fade-in">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4"><p className="font-medium text-amber-800 mb-2">What's happening:</p><p className="text-amber-700">{current.explanation}</p></div>
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-6"><p className="font-medium text-purple-800">Key Lesson: {current.lesson}</p></div>
+              <button onClick={() => { if (currentTest < tests.length - 1) { setCurrentTest(currentTest + 1); setShowExplanation(false); } else { onComplete({ completed: true }); } }} className="w-full py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2">{currentTest < tests.length - 1 ? 'Next Test' : 'Complete Activity'}<Icons.ArrowRight /></button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // Prompt Comparison Lab
+    const PromptComparisonLab = ({ onComplete }) => {
+      const [stage, setStage] = useState(0);
+      const [ratings, setRatings] = useState({});
+      const prompts = [
+        { type: "Lazy", example: "Write a story about a dog", expected: "Generic output" },
+        { type: "With Context", example: "I'm a middle schooler. Write a short story about a rescue dog for English class.", expected: "Better targeted" },
+        { type: "With Constraints", example: "Write a 200-word heartwarming story about a rescue dog. Target: 12-year-olds.", expected: "Much more specific" },
+        { type: "Collaborative", example: "I'm writing about a senior rescue dog who helps a lonely kid. Here's my opening... Help me continue.", expected: "Most personalized" }
+      ];
+      const current = prompts[stage];
+
+      return (
+        <div className="bg-white rounded-2xl shadow-lg p-6 fade-in">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">Prompt Comparison Lab</h3>
+          <FacilitatorNotes notes="This demonstrates that prompt quality directly affects output quality." tips="Key insight: Effort in the prompt shows up in quality of output." />
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">{prompts.map((_, i) => <button key={i} onClick={() => i <= stage && setStage(i)} className={"px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap transition-all " + (stage === i ? 'bg-pink-600 text-white' : 'bg-gray-200 text-gray-600')}>{i + 1}. {prompts[i].type}</button>)}</div>
+          <div className="bg-gradient-to-r from-pink-50 to-rose-50 rounded-xl p-6 mb-6">
+            <span className="inline-block px-3 py-1 bg-pink-100 text-pink-700 rounded-full text-sm font-medium mb-3">{current.type}</span>
+            <div className="bg-white rounded-lg p-4 shadow-sm mb-3"><p className="font-mono text-sm text-gray-800">{current.example}</p></div>
+            <p className="text-sm text-pink-700"><strong>Expected:</strong> {current.expected}</p>
+          </div>
+          <div className="mb-6">
+            <p className="text-sm font-medium text-gray-700 mb-2">Rate expected quality (1-5):</p>
+            <div className="flex gap-2">{[1, 2, 3, 4, 5].map(num => <button key={num} onClick={() => setRatings({ ...ratings, [stage]: num })} className={"w-12 h-12 rounded-xl font-bold transition-all " + (ratings[stage] === num ? 'bg-pink-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')}>{num}</button>)}</div>
+          </div>
+          <button onClick={() => { if (stage < prompts.length - 1) setStage(stage + 1); else onComplete({ ratings }); }} disabled={!ratings[stage]} className="w-full py-3 bg-gradient-to-r from-pink-600 to-rose-600 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">{stage < prompts.length - 1 ? 'Next Prompt Type' : 'Complete Activity'}<Icons.ArrowRight /></button>
+        </div>
+      );
+    };
+
+    // Use Case Sorting
+    const UseCaseSorting = ({ onComplete }) => {
+      const [responses, setResponses] = useState({});
+      const scenarios = ["Brainstorming ideas", "Writing a first draft", "Learning a new concept", "Getting emotional support", "Making life decisions", "Summarizing a book you should have read"];
+      const allAnswered = scenarios.every(s => responses[s]);
+
+      return (
+        <div className="bg-white rounded-2xl shadow-lg p-6 fade-in">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">When Does AI Help?</h3>
+          <FacilitatorNotes notes="No right answers - the point is developing judgment." tips="For 'AI hurts' items, what's the risk?" />
+          <div className="space-y-4 mb-6">
+            {scenarios.map((scenario, i) => (
+              <div key={i} className="bg-gray-50 rounded-xl p-4">
+                <p className="font-medium text-gray-800 mb-3">{scenario}</p>
+                <div className="flex gap-2">
+                  {['Helps a lot', 'Helps some', 'Hurts'].map(opt => <button key={opt} onClick={() => setResponses({ ...responses, [scenario]: opt })} className={"flex-1 py-2 rounded-lg text-sm font-medium transition-all " + (responses[scenario] === opt ? (opt === 'Helps a lot' ? 'bg-green-500 text-white' : opt === 'Helps some' ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white') : (opt === 'Helps a lot' ? 'bg-green-100 text-green-700' : opt === 'Helps some' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'))}>{opt}</button>)}
+                </div>
+              </div>
+            ))}
+          </div>
+          {allAnswered && <button onClick={() => onComplete({ responses })} className="w-full py-3 bg-gradient-to-r from-pink-600 to-rose-600 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2">Complete Activity<Icons.ArrowRight /></button>}
+        </div>
+      );
+    };
+
+    // Module Content Components
+    const Module1Content = ({ onComplete }) => {
+      const [activity, setActivity] = useState(0);
+      const handleComplete = (data) => { if (activity < 3) setActivity(activity + 1); else onComplete(data); };
+      return (
+        <div>
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">{['Prediction', 'Patterns', 'Zorbit', 'Reflection'].map((name, i) => <button key={i} onClick={() => i <= activity && setActivity(i)} className={"px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all " + (i === activity ? 'bg-purple-600 text-white' : i < activity ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500')}>{i < activity && '✓ '}{name}</button>)}</div>
+          {activity === 0 && <PredictionGame onComplete={handleComplete} />}
+          {activity === 1 && <PatternRecognition onComplete={handleComplete} />}
+          {activity === 2 && <ZorbitActivity onComplete={handleComplete} />}
+          {activity === 3 && <ReflectionActivity questions={["What's the difference between memorizing and understanding?", "Could something be 'smart' without being aware?", "How would you explain 'intelligence' to a friend?"]} onComplete={handleComplete} />}
+        </div>
+      );
+    };
+
+    const Module2Content = ({ onComplete }) => {
+      const [activity, setActivity] = useState(0);
+      const handleComplete = (data) => { if (activity < 1) setActivity(activity + 1); else onComplete(data); };
+      return (
+        <div>
+          <div className="flex gap-2 mb-6">{['Timeline', 'Reflection'].map((name, i) => <button key={i} onClick={() => i <= activity && setActivity(i)} className={"px-4 py-2 rounded-full text-sm font-medium transition-all " + (i === activity ? 'bg-green-600 text-white' : i < activity ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500')}>{i < activity && '✓ '}{name}</button>)}</div>
+          {activity === 0 && <TimelineActivity onComplete={handleComplete} />}
+          {activity === 1 && <ReflectionActivity questions={["What pattern do you notice in AI history?", "Why were there 'AI winters'?", "What might come next?"]} onComplete={handleComplete} />}
+        </div>
+      );
+    };
+
+    const Module3Content = ({ onComplete }) => {
+      const [activity, setActivity] = useState(0);
+      const handleComplete = (data) => { if (activity < 1) setActivity(activity + 1); else onComplete(data); };
+      return (
+        <div>
+          <div className="flex gap-2 mb-6">{['Sort AI', 'Reflection'].map((name, i) => <button key={i} onClick={() => i <= activity && setActivity(i)} className={"px-4 py-2 rounded-full text-sm font-medium transition-all " + (i === activity ? 'bg-blue-600 text-white' : i < activity ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-500')}>{i < activity && '✓ '}{name}</button>)}</div>
+          {activity === 0 && <AISortingActivity onComplete={handleComplete} />}
+          {activity === 1 && <ReflectionActivity questions={["Which AI's goals might conflict with yours?", "If you designed homework help AI, what should it optimize for?", "What will you think about differently now?"]} onComplete={handleComplete} />}
+        </div>
+      );
+    };
+
+    const Module4Content = ({ onComplete }) => {
+      const [activity, setActivity] = useState(0);
+      const handleComplete = (data) => { if (activity < 2) setActivity(activity + 1); else onComplete(data); };
+      return (
+        <div>
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">{['Token Prediction', 'Hallucinations', 'Reflection'].map((name, i) => <button key={i} onClick={() => i <= activity && setActivity(i)} className={"px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all " + (i === activity ? 'bg-orange-600 text-white' : i < activity ? 'bg-orange-100 text-orange-700' : 'bg-gray-200 text-gray-500')}>{i < activity && '✓ '}{name}</button>)}</div>
+          {activity === 0 && <TokenPredictionDemo onComplete={handleComplete} />}
+          {activity === 1 && <HallucinationHunt onComplete={handleComplete} />}
+          {activity === 2 && <ReflectionActivity questions={["Now that you know how LLMs work, what surprised you?", "When would you trust an LLM more vs less?", "What's AI good for? Bad for?"]} onComplete={handleComplete} />}
+        </div>
+      );
+    };
+
+    const Module5Content = ({ onComplete }) => {
+      const [activity, setActivity] = useState(0);
+      const handleComplete = (data) => { if (activity < 2) setActivity(activity + 1); else onComplete(data); };
+      return (
+        <div>
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">{['Prompt Lab', 'Use Cases', 'Reflection'].map((name, i) => <button key={i} onClick={() => i <= activity && setActivity(i)} className={"px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all " + (i === activity ? 'bg-pink-600 text-white' : i < activity ? 'bg-pink-100 text-pink-700' : 'bg-gray-200 text-gray-500')}>{i < activity && '✓ '}{name}</button>)}</div>
+          {activity === 0 && <PromptComparisonLab onComplete={handleComplete} />}
+          {activity === 1 && <UseCaseSorting onComplete={handleComplete} />}
+          {activity === 2 && <ReflectionActivity questions={["What pattern makes a good prompt?", "If you always use AI to write, what happens to your skills?", "What's the difference between tool and crutch?"]} onComplete={handleComplete} />}
+        </div>
+      );
+    };
+
+    const Module6Content = ({ onComplete }) => {
+      const [projectIdea, setProjectIdea] = useState('');
+      const [projectPlan, setProjectPlan] = useState('');
+      const [stage, setStage] = useState('planning');
+
+      return (
+        <div className="bg-white rounded-2xl shadow-lg p-6 fade-in">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">Build Something</h3>
+          <FacilitatorNotes notes="This is where it all comes together. The process documentation matters as much as the product!" tips="Three rules: (1) Genuine interest, (2) Meaningful AI collaboration, (3) Document the process." />
+          <div className="flex gap-2 mb-6">{['Planning', 'Building', 'Reflection'].map((name, i) => <button key={i} onClick={() => ['planning', 'building', 'reflection'].indexOf(stage) >= i && setStage(['planning', 'building', 'reflection'][i])} className={"px-4 py-2 rounded-full text-sm font-medium transition-all " + (stage === ['planning', 'building', 'reflection'][i] ? 'bg-yellow-600 text-white' : ['planning', 'building', 'reflection'].indexOf(stage) > i ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-200 text-gray-500')}>{name}</button>)}</div>
+          {stage === 'planning' && (
+            <div className="space-y-4">
+              <div><label className="block text-gray-700 font-medium mb-2">What will you create?</label><textarea value={projectIdea} onChange={(e) => setProjectIdea(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none resize-none" rows={3} placeholder="Describe your project idea..." /></div>
+              <div><label className="block text-gray-700 font-medium mb-2">How will AI help? What will you do yourself?</label><textarea value={projectPlan} onChange={(e) => setProjectPlan(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:outline-none resize-none" rows={3} placeholder="Plan your collaboration..." /></div>
+              <button onClick={() => setStage('building')} disabled={!projectIdea || !projectPlan} className="w-full py-3 bg-gradient-to-r from-yellow-600 to-amber-600 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all">Start Building</button>
+            </div>
+          )}
+          {stage === 'building' && (
+            <div className="space-y-4">
+              <div className="bg-yellow-50 rounded-xl p-4"><p className="font-medium text-yellow-800">Project: {projectIdea}</p></div>
+              <p className="text-gray-600">Work on your project with AI as your collaborator. Document what you ask, what you get, and what you change.</p>
+              <button onClick={() => setStage('reflection')} className="w-full py-3 bg-gradient-to-r from-yellow-600 to-amber-600 text-white rounded-xl font-semibold transition-all">Ready for Reflection</button>
+            </div>
+          )}
+          {stage === 'reflection' && <ReflectionActivity questions={["How did using AI change what you created?", "Did AI make this better than you could alone?", "Did anything feel like using AI as a crutch?", "What did you learn about yourself as a creator?"]} onComplete={(answers) => onComplete({ projectIdea, projectPlan, reflection: answers })} />}
+        </div>
+      );
+    };
+
+    // Main App
+    const App = () => {
+      const [progress, setProgress] = useState(getInitialProgress());
+      const [currentView, setCurrentView] = useState('home');
+      const [selectedModule, setSelectedModule] = useState(null);
+      const [isFacilitator, setIsFacilitator] = useState(true);
+      const [moduleProgress, setModuleProgress] = useState({});
+
+      useEffect(() => { localStorage.setItem('ai_literacy_progress', JSON.stringify(progress)); }, [progress]);
+
+      const handleModuleComplete = (moduleId, data) => {
+        const newCompleted = [...new Set([...progress.completedModules, moduleId])];
+        const newBadges = [...progress.badges];
+        const badgeMap = { 1: 'pattern_master', 2: 'history_buff', 3: 'ai_detective', 4: 'myth_buster', 5: 'prompt_pro', 6: 'creator' };
+        if (badgeMap[moduleId] && !newBadges.includes(badgeMap[moduleId])) newBadges.push(badgeMap[moduleId]);
+        setProgress({ ...progress, completedModules: newCompleted, badges: newBadges, responses: { ...progress.responses, [moduleId]: data } });
+        setCurrentView('home');
+        setSelectedModule(null);
+      };
+
+      const overallProgress = Math.round((progress.completedModules.length / 6) * 100);
+      const ModuleComponents = { 1: Module1Content, 2: Module2Content, 3: Module3Content, 4: Module4Content, 5: Module5Content, 6: Module6Content };
+
+      // Worksheet download functions
+      const downloadWorksheet = (moduleId) => {
+        const worksheetHTML = {
+          1: '<h1>Module 1: What Is Intelligence Anyway?</h1><p class="subtitle">Name: _______________ Date: ___________</p><h2>Part 1: The Prediction Game</h2><table><tr><th>Sentence</th><th>Your Prediction</th><th>Confidence (1-5)</th></tr><tr><td>The cat sat on the ___</td><td></td><td></td></tr><tr><td>Peanut butter and ___</td><td></td><td></td></tr><tr><td>After it started raining, I grabbed my ___</td><td></td><td></td></tr><tr><td>She looked at her phone and ___</td><td></td><td></td></tr></table><h2>Part 2: Pattern Recognition</h2><p><b>Sequence A:</b> 2, 4, 6, 8, ___, ___ Pattern: _______________</p><p><b>Sequence B:</b> 1, 1, 2, 3, 5, 8, ___, ___ Pattern: _______________</p><h2>Part 3: Zorbit Rule</h2><p>Guess 1: _______________________________________________</p><p>Guess 2: _______________________________________________</p><p>Final rule: _______________________________________________</p><h2>Reflection</h2><p>What is the difference between memorizing and understanding?</p><div class="answer-box"></div><p>Could something be "smart" without being aware?</p><div class="answer-box"></div>',
+          2: '<h1>Module 2: The AI Family Tree</h1><p class="subtitle">Name: _______________ Date: ___________</p><h2>Timeline Notes</h2><p><b>1950</b> - Turing: _______________________________________________</p><p><b>1956</b> - Dartmouth: _______________________________________________</p><p><b>1997</b> - Deep Blue: _______________________________________________</p><p><b>2012</b> - Deep Learning: _______________________________________________</p><p><b>2016</b> - AlphaGo: _______________________________________________</p><p><b>2017</b> - Transformers: _______________________________________________</p><p><b>2022</b> - ChatGPT: _______________________________________________</p><h2>Reflection</h2><p>What pattern do you notice in AI history?</p><div class="answer-box"></div><p>What might come next?</p><div class="answer-box"></div>',
+          3: '<h1>Module 3: AI in the Wild</h1><p class="subtitle">Name: _______________ Date: ___________</p><h2>AI Scavenger Hunt</h2><table><tr><th>#</th><th>AI/Feature</th><th>What does it do?</th><th>Helpful?</th></tr><tr><td>1</td><td></td><td></td><td></td></tr><tr><td>2</td><td></td><td></td><td></td></tr><tr><td>3</td><td></td><td></td><td></td></tr><tr><td>4</td><td></td><td></td><td></td></tr><tr><td>5</td><td></td><td></td><td></td></tr></table><h2>Optimization Detective</h2><table><tr><th>AI System</th><th>What is it optimizing?</th><th>Aligned with you?</th></tr><tr><td>YouTube</td><td></td><td></td></tr><tr><td>Spotify</td><td></td><td></td></tr><tr><td>Google</td><td></td><td></td></tr></table>',
+          4: '<h1>Module 4: How LLMs Actually Work</h1><p class="subtitle">Name: _______________ Date: ___________</p><h2>Token Prediction</h2><table><tr><th>Sentence</th><th>Your prediction</th><th>AI prediction</th></tr><tr><td>The sun set over the...</td><td></td><td></td></tr><tr><td>She picked up her phone and...</td><td></td><td></td></tr></table><h2>Hallucination Hunt</h2><p><b>Fake Book Test:</b> What did AI say? _______________________________________________</p><p><b>Memory Test:</b> What did AI say? _______________________________________________</p><h2>Reflection</h2><p>What surprised you about how LLMs work?</p><div class="answer-box"></div>',
+          5: '<h1>Module 5: The Craft of Collaboration</h1><p class="subtitle">Name: _______________ Date: ___________</p><h2>Prompt Comparison</h2><p><b>Lazy prompt:</b> _______________ Quality: ___/5</p><p><b>With context:</b> _______________ Quality: ___/5</p><p><b>With constraints:</b> _______________ Quality: ___/5</p><p><b>Collaborative:</b> _______________ Quality: ___/5</p><h2>My Checklist</h2><p>Before accepting AI output, I will ask:</p><p>[ ] Is this accurate?</p><p>[ ] Does this sound like me?</p><p>[ ] What is missing?</p><p>[ ] Did I learn anything?</p><h2>Crutch vs Tool</h2><p>I will use AI for: _______________________________________________</p><p>I will NOT use AI for: _______________________________________________</p>',
+          6: '<h1>Module 6: Build Something</h1><p class="subtitle">Name: _______________ Date: ___________</p><h2>Project Planning</h2><p><b>My project:</b> _______________________________________________</p><p><b>How AI will help:</b> _______________________________________________</p><p><b>What I will do myself:</b> _______________________________________________</p><h2>Process Log</h2><p><b>Entry 1:</b> Asked: _______________ Got: _______________ Did: _______________</p><p><b>Entry 2:</b> Asked: _______________ Got: _______________ Did: _______________</p><p><b>Entry 3:</b> Asked: _______________ Got: _______________ Did: _______________</p><h2>Final Reflection</h2><p>How did AI change what you created?</p><div class="answer-box"></div><p>What did you learn about yourself?</p><div class="answer-box"></div><div class="certificate"><h2>Certificate of Completion</h2><p>Congratulations! _______________ has completed the AI Literacy Course.</p><p>Date: _______________</p></div>'
+        };
+        const styles = 'body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:40px;line-height:1.6}h1{color:#4f46e5;border-bottom:2px solid #4f46e5;padding-bottom:10px}h2{color:#6366f1;margin-top:30px}.subtitle{color:#666;font-style:italic}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #ccc;padding:10px;text-align:left}th{background:#f3f4f6}.answer-box{border:1px solid #ccc;min-height:60px;margin:10px 0;border-radius:4px}.certificate{text-align:center;border:3px double #4f46e5;padding:40px;margin-top:40px}@media print{body{padding:20px}}';
+        const fullHTML = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AI Literacy - Module ' + moduleId + ' Worksheet</title><style>' + styles + '</style></head><body>' + (worksheetHTML[moduleId] || '') + '</body></html>';
+        const blob = new Blob([fullHTML], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ai-literacy-module-' + moduleId + '-worksheet.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      };
+
+      if (currentView === 'worksheets') {
+        const worksheets = [
+          { id: 1, title: "Module 1: What Is Intelligence Anyway?", pages: "2 pages" },
+          { id: 2, title: "Module 2: The AI Family Tree", pages: "2 pages" },
+          { id: 3, title: "Module 3: AI in the Wild", pages: "2 pages" },
+          { id: 4, title: "Module 4: How LLMs Actually Work", pages: "2 pages" },
+          { id: 5, title: "Module 5: The Craft of Collaboration", pages: "2 pages" },
+          { id: 6, title: "Module 6: Build Something", pages: "2 pages" }
+        ];
+
+        return (
+          <div className="min-h-screen bg-gray-50">
+            <div className="gradient-bg text-white py-6 px-6">
+              <div className="max-w-4xl mx-auto">
+                <button onClick={() => setCurrentView('home')} className="flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-all"><Icons.ArrowLeft /><span>Back to Home</span></button>
+                <h1 className="text-2xl font-bold">Download Worksheets</h1>
+                <p className="text-purple-100">Printable worksheets for offline use</p>
+              </div>
+            </div>
+            <div className="max-w-4xl mx-auto px-6 py-8">
+              <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                <div className="flex items-center justify-between">
+                  <div><h2 className="text-lg font-bold text-gray-800">All Worksheets</h2><p className="text-sm text-gray-500">Download all 6 worksheets</p></div>
+                  <button onClick={() => { for (let i = 1; i <= 6; i++) setTimeout(() => downloadWorksheet(i), i * 500); }} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all"><Icons.Download /><span>Download All</span></button>
+                </div>
+              </div>
+              <div className="grid gap-4">
+                {worksheets.map((ws) => {
+                  const module = MODULES.find(m => m.id === ws.id);
+                  const Icon = module.icon;
+                  return (
+                    <div key={ws.id} className="bg-white rounded-xl shadow-md p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className={"w-12 h-12 rounded-lg bg-gradient-to-br flex items-center justify-center text-white " + module.color}><Icon /></div>
+                        <div><h3 className="font-semibold text-gray-800">{ws.title}</h3><p className="text-sm text-gray-500">{ws.pages}</p></div>
+                      </div>
+                      <button onClick={() => downloadWorksheet(ws.id)} className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-all"><Icons.Download /><span>Download</span></button>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-8 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <h3 className="font-semibold text-amber-800 mb-2">Printing Tips</h3>
+                <ul className="text-sm text-amber-700 space-y-1">
+                  <li>Open the HTML file in your browser</li>
+                  <li>Use Ctrl/Cmd + P to print or save as PDF</li>
+                  <li>Use "Fit to page" in print settings</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (currentView === 'home') {
+        return (
+          <FacilitatorContext.Provider value={isFacilitator}>
+            <div className="min-h-screen bg-gray-50">
+              <div className="gradient-bg text-white py-8 px-6">
+                <div className="max-w-4xl mx-auto">
+                  <div className="flex items-center justify-between mb-6">
+                    <div><h1 className="text-3xl font-bold mb-2">AI Literacy</h1><p className="text-purple-100">A Course for Young Learners</p></div>
+                    <button onClick={() => setIsFacilitator(!isFacilitator)} className={"flex items-center gap-2 px-4 py-2 rounded-full transition-all " + (isFacilitator ? 'bg-white/20 text-white' : 'bg-white/10 text-purple-200')}><Icons.Eye /><span className="text-sm font-medium">{isFacilitator ? 'Facilitator View' : 'Student View'}</span></button>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="relative"><ProgressRing progress={overallProgress} /><div className="absolute inset-0 flex items-center justify-center"><span className="text-2xl font-bold">{overallProgress}%</span></div></div>
+                    <div><p className="text-lg font-medium">{progress.completedModules.length} of 6 modules complete</p><p className="text-purple-200">{progress.badges.length} badges earned</p></div>
+                  </div>
+                </div>
+              </div>
+
+              {isFacilitator && (
+                <div className="max-w-4xl mx-auto px-6 -mt-4 mb-4">
+                  <div className="bg-white rounded-2xl shadow-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div><h3 className="text-sm font-semibold text-gray-600">Facilitator Tools</h3><p className="text-xs text-gray-400">Download printable worksheets</p></div>
+                      <button onClick={() => setCurrentView('worksheets')} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-indigo-700 transition-all"><Icons.Printer /><span>Download Worksheets</span></button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {progress.badges.length > 0 && (
+                <div className="max-w-4xl mx-auto px-6 -mt-4 mb-4"><div className="bg-white rounded-2xl shadow-lg p-4"><h3 className="text-sm font-semibold text-gray-600 mb-3">Earned Badges</h3><div className="flex gap-3 overflow-x-auto pb-2">{BADGES.filter(b => progress.badges.includes(b.id)).map(badge => <Badge key={badge.id} badge={badge} earned={true} />)}</div></div></div>
+              )}
+
+              <div className="max-w-4xl mx-auto px-6 py-8">
+                <h2 className="text-xl font-bold text-gray-800 mb-6">Course Modules</h2>
+                <div className="grid gap-4">
+                  {MODULES.map((module) => {
+                    const Icon = module.icon;
+                    const isCompleted = progress.completedModules.includes(module.id);
+                    const isUnlocked = module.id === 1 || progress.completedModules.includes(module.id - 1);
+                    return (
+                      <div key={module.id} onClick={() => isUnlocked && (setSelectedModule(module.id), setCurrentView('module'))} className={"module-card bg-white rounded-2xl shadow-lg p-6 transition-all cursor-pointer " + (isUnlocked ? 'hover:shadow-xl' : 'opacity-60 cursor-not-allowed') + (isCompleted ? ' ring-2 ring-green-400' : '')}>
+                        <div className="flex items-start gap-4">
+                          <div className={"w-14 h-14 rounded-xl bg-gradient-to-br flex items-center justify-center text-white shrink-0 " + module.color}><Icon /></div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1"><span className="text-sm text-gray-500">Module {module.id}</span>{isCompleted && <span className="flex items-center gap-1 text-green-600 text-sm font-medium"><Icons.Check /> Complete</span>}</div>
+                            <h3 className="text-lg font-bold text-gray-800 mb-1">{module.title}</h3>
+                            <p className="text-gray-600 text-sm mb-2">{module.description}</p>
+                            <span className="text-xs text-gray-400">{module.duration}</span>
+                          </div>
+                          {isUnlocked && <div className="text-gray-400"><Icons.ArrowRight /></div>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="max-w-4xl mx-auto px-6 pb-12">
+                <h2 className="text-xl font-bold text-gray-800 mb-4">All Badges</h2>
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-3">{BADGES.map(badge => <Badge key={badge.id} badge={badge} earned={progress.badges.includes(badge.id)} />)}</div>
+              </div>
+            </div>
+          </FacilitatorContext.Provider>
+        );
+      }
+
+      if (currentView === 'module' && selectedModule) {
+        const module = MODULES.find(m => m.id === selectedModule);
+        const Icon = module.icon;
+        const ModuleContent = ModuleComponents[selectedModule];
+
+        return (
+          <FacilitatorContext.Provider value={isFacilitator}>
+            <div className="min-h-screen bg-gray-50">
+              <div className={"bg-gradient-to-br text-white py-6 px-6 " + module.color}>
+                <div className="max-w-4xl mx-auto">
+                  <button onClick={() => (setCurrentView('home'), setSelectedModule(null))} className="flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-all"><Icons.ArrowLeft /><span>Back to Modules</span></button>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center"><Icon /></div>
+                    <div><p className="text-sm text-white/70">Module {module.id}</p><h1 className="text-2xl font-bold">{module.title}</h1></div>
+                  </div>
+                </div>
+              </div>
+              <div className="max-w-4xl mx-auto px-6 py-8">
+                <ModuleContent onComplete={(data) => handleModuleComplete(selectedModule, data)} progress={moduleProgress} setProgress={setModuleProgress} />
+              </div>
+            </div>
+          </FacilitatorContext.Provider>
+        );
+      }
+
+      return null;
+    };
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
