@@ -40,7 +40,40 @@
       Download: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
       Lightbulb: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
       Play: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-      Star: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+      Star: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>,
+      Save: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>,
+      Upload: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>,
+      X: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>,
+      Copy: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+    };
+
+    // Progress Code Functions
+    const generateProgressCode = (progress) => {
+      // Create a simple code: completed modules as binary + random suffix
+      const binary = [1,2,3,4,5,6].map(m => progress.completed.includes(m) ? '1' : '0').join('');
+      const decimal = parseInt(binary, 2);
+      const words = ['STAR', 'MOON', 'SUN', 'BOLT', 'WAVE', 'FIRE', 'WIND', 'RAIN'];
+      const word = words[decimal % words.length];
+      const num = Math.floor(Math.random() * 90 + 10);
+      return word + '-' + decimal.toString(36).toUpperCase() + num;
+    };
+
+    const parseProgressCode = (code) => {
+      try {
+        const parts = code.trim().toUpperCase().split('-');
+        if (parts.length !== 2) return null;
+        const numPart = parts[1].replace(/[0-9]+$/, '');
+        const decimal = parseInt(numPart, 36);
+        if (isNaN(decimal) || decimal < 0 || decimal > 63) return null;
+        const binary = decimal.toString(2).padStart(6, '0');
+        const completed = [];
+        for (let i = 0; i < 6; i++) {
+          if (binary[i] === '1') completed.push(i + 1);
+        }
+        return { completed, currentStep: {} };
+      } catch (e) {
+        return null;
+      }
     };
 
     const MODULES = [
@@ -61,6 +94,112 @@
       { id: 6, name: "AI Creator", icon: "🚀", module: 6 }
     ];
 
+    // Save/Load Modal Component
+    function SaveLoadModal({ isOpen, onClose, mode, progress, onLoadProgress }) {
+      const [code, setCode] = useState('');
+      const [generatedCode, setGeneratedCode] = useState('');
+      const [copied, setCopied] = useState(false);
+      const [error, setError] = useState('');
+
+      useEffect(() => {
+        if (isOpen && mode === 'save') {
+          setGeneratedCode(generateProgressCode(progress));
+        }
+        setCode('');
+        setError('');
+        setCopied(false);
+      }, [isOpen, mode, progress]);
+
+      const handleCopy = () => {
+        navigator.clipboard.writeText(generatedCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      };
+
+      const handleLoad = () => {
+        const parsed = parseProgressCode(code);
+        if (parsed) {
+          onLoadProgress(parsed);
+          onClose();
+        } else {
+          setError('Invalid code. Please check and try again.');
+        }
+      };
+
+      if (!isOpen) return null;
+
+      return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">
+                {mode === 'save' ? 'Save Your Progress' : 'Load Your Progress'}
+              </h2>
+              <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+                <Icons.X />
+              </button>
+            </div>
+
+            {mode === 'save' ? (
+              <div>
+                <p className="text-gray-600 mb-4">
+                  Write down this code to save your progress. You can use it to continue on any device!
+                </p>
+                <div className="bg-gray-100 rounded-lg p-4 mb-4 flex items-center justify-between">
+                  <span className="text-2xl font-mono font-bold text-indigo-600 tracking-wider">
+                    {generatedCode}
+                  </span>
+                  <button
+                    onClick={handleCopy}
+                    className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                    title="Copy to clipboard"
+                  >
+                    {copied ? <Icons.Check /> : <Icons.Copy />}
+                  </button>
+                </div>
+                {copied && (
+                  <p className="text-green-600 text-sm mb-4">Copied to clipboard!</p>
+                )}
+                <div className="bg-amber-50 rounded-lg p-3 text-sm text-amber-800">
+                  <strong>Tip:</strong> Write this code in your notebook or take a screenshot!
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p className="text-gray-600 mb-4">
+                  Enter your save code to restore your progress.
+                </p>
+                <input
+                  type="text"
+                  value={code}
+                  onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(''); }}
+                  placeholder="e.g., STAR-A42"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-center text-xl font-mono tracking-wider focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+                />
+                {error && (
+                  <p className="text-red-500 text-sm mt-2">{error}</p>
+                )}
+                <button
+                  onClick={handleLoad}
+                  disabled={!code.trim()}
+                  className="w-full mt-4 px-4 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Load Progress
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={onClose}
+              className="w-full mt-3 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     // Main App
     function App() {
       const [view, setView] = useState('home');
@@ -69,6 +208,8 @@
         const saved = localStorage.getItem('ai-literacy-progress-v2');
         return saved ? JSON.parse(saved) : { completed: [], currentStep: {} };
       });
+      const [showSaveModal, setShowSaveModal] = useState(false);
+      const [saveModalMode, setSaveModalMode] = useState('save');
 
       useEffect(() => {
         localStorage.setItem('ai-literacy-progress-v2', JSON.stringify(progress));
@@ -88,6 +229,16 @@
       const renderIcon = (iconName) => {
         const IconComponent = Icons[iconName];
         return IconComponent ? <IconComponent /> : null;
+      };
+
+      const openSaveModal = () => {
+        setSaveModalMode('save');
+        setShowSaveModal(true);
+      };
+
+      const openLoadModal = () => {
+        setSaveModalMode('load');
+        setShowSaveModal(true);
       };
 
       if (view === 'module' && currentModule) {
@@ -143,7 +294,7 @@
           </header>
 
           {/* Actions */}
-          <div className="max-w-4xl mx-auto px-4 py-4">
+          <div className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap gap-3">
             <button
               onClick={() => setView('worksheets')}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700"
@@ -151,7 +302,30 @@
               <Icons.Download />
               <span>Download Worksheets</span>
             </button>
+            <button
+              onClick={openSaveModal}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700"
+            >
+              <Icons.Save />
+              <span>Save Progress</span>
+            </button>
+            <button
+              onClick={openLoadModal}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700"
+            >
+              <Icons.Upload />
+              <span>Load Progress</span>
+            </button>
           </div>
+
+          {/* Save/Load Modal */}
+          <SaveLoadModal
+            isOpen={showSaveModal}
+            onClose={() => setShowSaveModal(false)}
+            mode={saveModalMode}
+            progress={progress}
+            onLoadProgress={setProgress}
+          />
 
           {/* Course Intro */}
           <div className="max-w-4xl mx-auto px-4 py-4">
